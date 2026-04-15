@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scouting Leaderboard</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .leaderboard-list {
+            list-style: none;
+        }
+        
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #2d2d2d;
+            border-radius: 8px;
+            border-left: 4px solid #555555;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .leaderboard-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.2);
+        }
+        
+        .leaderboard-item.top-1 {
+            border-left-color: #ffd700;
+            background: #3d3d1a;
+        }
+        
+        .leaderboard-item.top-2 {
+            border-left-color: #c0c0c0;
+            background: #3a3a3a;
+        }
+        
+        .leaderboard-item.top-3 {
+            border-left-color: #cd7f32;
+            background: #3d3520;
+        }
+        
+        .rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #cccccc;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .leaderboard-item.top-1 .rank {
+            color: #ffd700;
+        }
+        
+        .leaderboard-item.top-2 .rank {
+            color: #c0c0c0;
+        }
+        
+        .leaderboard-item.top-3 .rank {
+            color: #cd7f32;
+        }
+        
+        .name {
+            flex: 1;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #ffffff;
+            margin-left: 15px;
+        }
+        
+        .score {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #FFFFFF;
+            min-width: 80px;
+            text-align: right;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #ffd700;
+            font-size: 1.1em;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 20px;
+            background: #fee;
+            color: #c33;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px;
+            color: #cccccc;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Scouting Leaderboard</h1>
+        
+        <div id="content">
+            <div class="loading">Loading leaderboard data...</div>
+        </div>
+    </div>
+    
+    <script>
+        // Fetch leaderboard data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchLeaderboard();
+            
+            // Refresh data every 30 seconds
+            setInterval(fetchLeaderboard, 30000);
+        });
+        
+        function fetchLeaderboard() {
+            fetch('/api/leaderboard')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch leaderboard data');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    renderLeaderboard(data);
+                })
+                .catch(error => {
+                    document.getElementById('content').innerHTML = 
+                        '<div class="error">Error loading leaderboard: ' + error.message + '</div>';
+                    console.error('Error:', error);
+                });
+        }
+        
+        function renderLeaderboard(data) {
+            const content = document.getElementById('content');
+            
+            if (!data || data.length === 0) {
+                content.innerHTML = '<div class="empty-message">No leaderboard data available</div>';
+                return;
+            }
+            
+            let html = '<ul class="leaderboard-list">';
+            
+            data.forEach((entry, index) => {
+                const rank = index + 1;
+                let className = 'leaderboard-item';
+                
+                if (rank === 1) className += ' top-1';
+                else if (rank === 2) className += ' top-2';
+                else if (rank === 3) className += ' top-3';
+                
+                const score = typeof entry.score === 'number' 
+                    ? Math.round(entry.score) 
+                    : entry.score;
+                
+                html += `
+                    <li class="${className}">
+                        <div class="rank">#${rank}</div>
+                        <div class="name">${escapeHtml(entry.name)}</div>
+                        <div class="score">${score}</div>
+                    </li>
+                `;
+            });
+            
+            html += '</ul>';
+            content.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

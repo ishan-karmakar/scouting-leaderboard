@@ -1,0 +1,11 @@
+services:
+  leaderboard:
+    build: .
+    container_name: leaderboard-app
+    ports:
+      - "6767:6767"
+    environment:
+      - GOOGLE_SHEETS_PIT_SPREADSHEET_ID=${GOOGLE_SHEETS_PIT_SPREADSHEET_ID}
+    volumes:
+      - ./credentials.json:/app/credentials.json:ro
+    restart: unless-stopped
